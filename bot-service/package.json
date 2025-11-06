@@ -1,0 +1,21 @@
+{
+  "name": "bot-service",
+  "version": "1.0.0",
+  "description": "The TypeScript bot that joins meetings.",
+  "main": "src/bot.ts",
+  "scripts": {
+    "start": "ts-node src/bot.ts",
+    "auth": "ts-node src/auth.ts"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "playwright": "^1.56.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
