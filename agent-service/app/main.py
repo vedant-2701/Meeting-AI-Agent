@@ -1,14 +1,24 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
-import uvicorn # Import uvicorn
+import uvicorn
 
 # --- Pydantic Data Model ---
-# This defines the structure of the data we EXPECT to receive from the bot.
+
+# *** --- START OF CHANGE: NEW DATA STRUCTURE --- ***
+# Update the Participant model
+class Participant(BaseModel):
+    name: str
+    avatarUrl: str # Added avatar URL
+    roles: List[str]  # This is now a list of roles
+
+# Update the MeetingReport to expect a List of new Participant objects
 class MeetingReport(BaseModel):
     attendeeCount: int
-    attendees: List[str]
+    attendees: List[Participant]
     meetingUrl: str
+# *** --- END OF CHANGE --- ***
+
 
 # Create the FastAPI app instance
 app = FastAPI(title="AI Agent Service")
@@ -27,8 +37,18 @@ async def receive_meeting_report(report: MeetingReport):
     """
     print("--- 🧠 AI Agent Received a Report ---")
     print(f"Meeting URL: {report.meetingUrl}")
-    print(f"Attendee Count: {report.attendeeCount}")
-    print(f"Attendees: {', '.join(report.attendees)}")
+    print(f"Unique Attendee Count: {report.attendeeCount}")
+    
+    # *** --- START OF CHANGE: UPDATED PRINT LOGIC --- ***
+    # Loop through the objects and print them
+    print("Attendees:")
+    for p in report.attendees:
+        # Join all roles, e.g., "Host, Presenter"
+        role_str = f" (Roles: {', '.join(p.roles)})"
+        print(f"  - {p.name}{role_str}")
+        print(f"    Avatar: {p.avatarUrl}")
+    # *** --- END OF CHANGE --- ***
+        
     print("--------------------------------------")
     
     return {"status": "Report received and logged successfully"}

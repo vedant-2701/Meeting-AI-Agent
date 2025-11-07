@@ -48,6 +48,9 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "types": ["node"],
+    "emitDeclarationOnly": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true
     // "skipLibCheck": true,
   },
   "include": ["src/**/*"],
