@@ -65,7 +65,7 @@ export class MeetService {
         const showEveryoneButtonSelector = 'button[aria-label^="People"]';
         await this.page.locator(showEveryoneButtonSelector).click();
 
-        await this.page.waitForTimeout(3000); // Wait for list to render
+        await this.page.waitForTimeout(5000); // Wait for list to render
 
         const participantSelector = "div[data-participant-id]";
         await this.page.waitForSelector(participantSelector);
