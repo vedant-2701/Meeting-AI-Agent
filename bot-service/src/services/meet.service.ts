@@ -1,7 +1,8 @@
 import { chromium, BrowserContext, Page } from "playwright";
 import * as fs from "fs";
 import { USER_DATA_DIR } from "../config";
-import { RawParticipant } from "../types/participants.types";
+import { RawParticipant, Participant } from "../types/participants.types";
+import { ChatMessage } from "../types/chat-message.types";
 
 /**
  * This class manages all interactions with the Playwright browser
@@ -10,6 +11,15 @@ import { RawParticipant } from "../types/participants.types";
 export class MeetService {
     private context: BrowserContext | null = null;
     private page: Page | null = null;
+    private isInMeeting: boolean = false;
+
+    /**
+     * Simple wrapper for page.waitForTimeout
+     */
+    async wait(ms: number): Promise<void> {
+        if (!this.page) return;
+        await this.page.waitForTimeout(ms);
+    }
 
     /**
      * Launches the browser and loads the authenticated user profile.
@@ -52,7 +62,24 @@ export class MeetService {
             state: "visible",
             timeout: 60000,
         });
+
+        this.isInMeeting = true; // Set monitoring flag
         console.log("Successfully joined the meeting!");
+    }
+
+    async openParticipantPanel(): Promise<void> {
+        if (!this.page) throw new Error("Browser is not in a meeting.");
+
+        console.log("Opening participant list...");
+        const showEveryoneButtonSelector = 'button[aria-label^="People"]';
+        await this.page.locator(showEveryoneButtonSelector).click();
+
+        const participantSelector = "div[data-participant-id]";
+        await this.page.waitForSelector(participantSelector, {
+            state: "visible",
+            timeout: 5000,
+        });
+        console.log("Participant panel is open.");
     }
 
     /**
@@ -61,11 +88,7 @@ export class MeetService {
     async scrapeParticipants(): Promise<RawParticipant[]> {
         if (!this.page) throw new Error("Browser is not in a meeting.");
 
-        console.log("Opening participant list...");
-        const showEveryoneButtonSelector = 'button[aria-label^="People"]';
-        await this.page.locator(showEveryoneButtonSelector).click();
-
-        await this.page.waitForTimeout(5000); // Wait for list to render
+        await this.wait(5000); // Wait for list to render
 
         const participantSelector = "div[data-participant-id]";
         await this.page.waitForSelector(participantSelector);
@@ -111,9 +134,96 @@ export class MeetService {
     }
 
     /**
+     * Opens the chat panel in Google Meet.
+     */
+    async openChatPanel(): Promise<void> {
+        if (!this.page) throw new Error("Browser is not in a meeting.");
+
+        try {
+            console.log("Opening chat panel...");
+            // Using the selector you provided
+            const chatButtonSelector =
+                'button[aria-label="Chat with everyone"]';
+            await this.page.waitForSelector(chatButtonSelector, {
+                state: "visible",
+                timeout: 10000,
+            });
+            await this.page.locator(chatButtonSelector).click();
+
+            // Wait for the chat message container to be visible
+            await this.page.waitForSelector('div[jsname="xySENc"]', {
+                state: "visible",
+                timeout: 5000,
+            });
+            console.log("Chat panel is open.");
+        } catch (e) {
+            console.error("Could not open chat panel.", e);
+        }
+    }
+
+    /**
+     * Scrapes all chat messages from the panel.
+     * Now handles consecutive messages.
+     */
+    async scrapeChatMessages(): Promise<ChatMessage[]> {
+        if (!this.page) throw new Error("Browser is not in a meeting.");
+
+        const messageBlockSelector = "div.Ss4fHf"; // Selects the entire block for one person
+        try {
+            await this.page.waitForSelector(messageBlockSelector, {
+                timeout: 5000,
+            });
+
+            const messages: ChatMessage[] = [];
+
+            // Get all message blocks
+            const messageBlocks = await this.page.$$(messageBlockSelector);
+
+            for (const block of messageBlocks) {
+                // Find the sender and time once for the whole block
+                const senderEl = await block.$("div.poVWob"); // Sender name
+                const timeEl = await block.$("div.MuzmKe"); // Timestamp
+
+                // If no time, it's not a valid message block
+                if (!timeEl) continue;
+
+                // If senderEl is null, it's "You" (from your log)
+                const sender = senderEl
+                    ? ((await senderEl.textContent()) || "Unknown").trim()
+                    : "You";
+                const time = ((await timeEl.textContent()) || "??:??").trim();
+
+                // Find ALL message bubbles inside this block
+                // Your HTML shows consecutive messages are in 'div.RLrADb'
+                const msgBubbleEls = await block.$$("div.RLrADb");
+
+                for (const msgEl of msgBubbleEls) {
+                    // Inside the bubble, the text is in 'div[jsname="dTKtvb"]'
+                    const textEl = await msgEl.$('div[jsname="dTKtvb"]');
+                    if (textEl) {
+                        const message = (
+                            (await textEl.textContent()) || ""
+                        ).trim();
+                        if (message) {
+                            messages.push({ sender, time, message });
+                        }
+                    }
+                }
+            }
+            return messages;
+        } catch (e) {
+            // It's okay if no messages are found
+            return [];
+        }
+    }
+
+
+    /**
      * Finds the "Leave call" button and clicks it.
      */
     async leaveCall(): Promise<void> {
+        this.isInMeeting = false;
+
         if (!this.context) return;
 
         console.log("Cleaning up and leaving the call...");

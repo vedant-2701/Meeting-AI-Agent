@@ -1,3 +1,9 @@
+export interface ChatMessage {
+    sender: string;
+    time: string;
+    message: string;
+}
+
 // This matches the Pydantic models in our Python agent
 export interface Participant {
     name: string;
@@ -9,6 +15,7 @@ export interface MeetingReport {
     attendeeCount: number;
     attendees: Participant[];
     meetingUrl: string;
+    chat: ChatMessage[];
     // We'll add a 'createdAt' field in the python agent later
     // createdAt: string;
 }
