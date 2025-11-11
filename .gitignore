@@ -4,7 +4,7 @@ dist
 venv/
 user-data/
 db.json
-
+agent_data/
 __pycache__/
 *.pyc
 todo.txt

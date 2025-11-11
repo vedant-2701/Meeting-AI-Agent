@@ -1,44 +1,35 @@
 {
   "manifest_version": 3,
-  "name": "Meet AI Co-Pilot (v2.0)",
-  "version": "2.0.0",
-  "description": "A simple, auto-injecting side panel for Google Meet.",
-
+  "name": "Google Meet Live Co-Pilot",
+  "version": "1.0.0",
+  "description": "Real-time audio transcription and AI assistance for Google Meet",
   "permissions": [
-    "storage",
     "activeTab",
-    "tabCapture"
+    "tabCapture",
+    "storage",
+    "offscreen"
   ],
-
   "host_permissions": [
-    "*://meet.google.com/*"
+    "https://meet.google.com/*",
+    "ws://localhost:8000/*"
   ],
-
-  "action": {
-    "default_title": "Co-Pilot Settings (Not used for toggle)",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
-  },
-
-  "content_scripts": [
-    {
-      "matches": ["*://meet.google.com/*"],
-      "css": ["content-script.css"],
-      "js": ["content-script.js"],
-      "run_at": "document_idle"
-    }
-  ],
-  
   "background": {
     "service_worker": "background.js"
   },
-
+  "action": {
+    "default_title": "Co-Pilot Settings"
+  },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "css": ["content-script.css"],
+      "run_at": "document_end"
+    }
+  ]
 }

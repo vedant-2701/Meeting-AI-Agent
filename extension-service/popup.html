@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 320px;
+      padding: 16px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      color: #1a202c;
+    }
+    
+    .subtitle {
+      color: #718096;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    
+    .status.inactive {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    
+    .status.active {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    
+    .status.connecting {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+    
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+    
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-start {
+      background: #48bb78;
+      color: white;
+    }
+    
+    .btn-stop {
+      background: #f56565;
+      color: white;
+    }
+    
+    .info {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    .indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .indicator.green {
+      background: #48bb78;
+      animation: pulse 2s infinite;
+    }
+    
+    .indicator.red {
+      background: #f56565;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️ Meet Co-Pilot</h1>
+    <p class="subtitle">Real-time audio transcription</p>
+    
+    <div id="status" class="status inactive">
+      <span class="indicator red"></span>
+      <span id="statusText">Not recording</span>
+    </div>
+    
+    <button id="startBtn" class="btn-start">
+      Start Recording
+    </button>
+    
+    <button id="stopBtn" class="btn-stop" style="display: none;">
+      Stop Recording
+    </button>
+    
+    <div class="info">
+      <strong>How it works:</strong><br>
+      1. Click "Start Recording"<br>
+      2. Audio from the Meet tab will be captured<br>
+      3. Audio is sent to your backend in 5-second chunks<br>
+      4. Backend will process and transcribe the audio
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

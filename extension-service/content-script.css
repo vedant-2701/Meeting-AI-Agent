@@ -1,167 +1,237 @@
-/*
- * This styles our simple FLOATING panel
- */
+/* content-script.css */
+
+/* --- Copilot Side Panel --- */
 #ai-copilot-side-panel {
   position: fixed;
-  top: 72px;
-  right: 16px;
+  top: 10px;
+  right: 10px;
   width: 320px;
-  height: calc(100vh - 72px - 80px - 16px);
-  max-height: 800px;
-  
+  max-height: 600px;
   background-color: #202124;
+  color: #e8eaed;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  z-index: 100001; /* High z-index to be on top */
-  
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+  font-size: 14px;
   display: flex;
   flex-direction: column;
-  color: #e8eaed;
-  font-family: 'Google Sans', Roboto, Arial, sans-serif;
-  
-  /* Start hidden, we will show it with JS */
-  display: none; 
+  overflow: hidden;
 }
 
-/*
- * This is the small "Maximize" toggle button (the bubble)
- */
-#ai-copilot-toggle-button {
-  position: fixed;
-  top: 72px;
-  right: 16px;
-  width: 50px;
-  height: 50px;
-  background-color: #3c4043;
-  border: 1px solid #5f6368;
-  border-radius: 50%;
-  z-index: 100001; /* High z-index */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  cursor: pointer;
-  
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: white;
-}
-
-#ai-copilot-toggle-button:hover {
-  background-color: #4a4e52;
-}
-
-
-/* --- Panel Internal Styles --- */
-
-#ai-copilot-side-panel .copilot-header {
+.copilot-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #5f6368;
-  cursor: grab;
+  background-color: #292a2d;
+  padding: 12px;
+  border-bottom: 1px solid #3c4043;
 }
 
-#ai-copilot-side-panel .copilot-header h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: white;
+.copilot-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
 }
 
-/* Minimize Button */
-#ai-copilot-side-panel .copilot-header #copilot-minimize-btn {
-  background: transparent;
+#copilot-minimize-btn {
+  background-color: transparent;
+  color: #e8eaed;
   border: none;
-  color: #9aa0a6;
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 20px;
   cursor: pointer;
-  padding: 0 8px;
-}
-#ai-copilot-side-panel .copilot-header #copilot-minimize-btn:hover {
-  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
-/* Panel Body */
-#ai-copilot-side-panel .copilot-body {
-  padding: 16px;
-  overflow-y: hidden; /* Hide overflow */
-  flex-grow: 1;
+#copilot-minimize-btn:hover {
+  background-color: #3c4043;
+}
+
+.copilot-body {
   display: flex;
   flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+}
+
+#copilot-record-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #3c4043;
+  color: #e8eaed;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#copilot-record-btn:hover {
+  background-color: #4a4d52;
+}
+
+#copilot-record-btn.recording {
+  background-color: #c5221f;
+}
+
+#copilot-record-btn.recording:hover {
+  background-color: #d73d3a;
+}
+
+#copilot-record-btn .icon {
+  font-size: 16px;
 }
 
 #copilot-status {
-  font-style: italic;
+  margin: 0;
+  padding: 8px 12px;
+  background-color: #292a2d;
+  border-radius: 6px;
+  font-size: 13px;
   color: #9aa0a6;
-  margin-bottom: 12px;
-  font-size: 0.8rem;
-  flex-shrink: 0; /* Don't shrink */
 }
 
-/* --- NEW CHAT LOG STYLES --- */
+/* --- Chat Log Area --- */
 #copilot-chat-log {
-  flex-grow: 1; /* This makes the log fill the space */
-  background-color: #2d3748;
-  border-radius: 8px;
+  flex: 1;
   overflow-y: auto;
+  background-color: #292a2d;
+  border-radius: 6px;
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  min-height: 200px;
+  max-height: 300px;
+}
+
+#copilot-chat-log::-webkit-scrollbar {
+  width: 6px;
+}
+
+#copilot-chat-log::-webkit-scrollbar-track {
+  background: #202124;
+  border-radius: 3px;
+}
+
+#copilot-chat-log::-webkit-scrollbar-thumb {
+  background: #5f6368;
+  border-radius: 3px;
+}
+
+#copilot-chat-log::-webkit-scrollbar-thumb:hover {
+  background: #80868b;
 }
 
 .chat-message {
-  font-size: 0.9rem;
+  padding: 8px 10px;
+  border-radius: 6px;
   line-height: 1.4;
-}
-.chat-message strong {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-.user-message strong {
-  color: #8ab4f8; /* Google Blue */
-}
-.agent-message strong {
-  color: #a0c293; /* Green */
+  word-wrap: break-word;
 }
 
-/* --- NEW CHAT INPUT STYLES --- */
+.user-message {
+  background-color: #1e3a5f;
+  align-self: flex-end;
+  margin-left: 20%;
+}
+
+.agent-message {
+  background-color: #3c4043;
+  align-self: flex-start;
+  margin-right: 20%;
+}
+
+.chat-message strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* --- Chat Input Area --- */
 .copilot-chat-input-area {
   display: flex;
-  margin-top: 12px;
   gap: 8px;
-  flex-shrink: 0; /* Don't shrink */
+  align-items: center;
 }
 
 #copilot-chat-input {
-  flex-grow: 1;
-  background-color: #3c4043;
-  border: 1px solid #5f6368;
-  color: white;
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 0.9rem;
-}
-#copilot-chat-input:focus {
+  flex: 1;
+  background-color: #292a2d;
+  color: #e8eaed;
+  border: 1px solid #3c4043;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
   outline: none;
+  transition: border-color 0.2s ease;
+}
+
+#copilot-chat-input:focus {
   border-color: #8ab4f8;
 }
 
 #copilot-chat-send-btn {
-  background-color: #8ab4f8; /* Google Blue */
+  background-color: #8ab4f8;
   color: #202124;
   border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
 }
+
 #copilot-chat-send-btn:hover {
-  background-color: #9ec0f9;
+  background-color: #aecbfa;
+}
+
+#copilot-chat-send-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* --- Toggle Button (Minimized State) --- */
+#ai-copilot-toggle-button {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 56px;
+  height: 56px;
+  background-color: #8ab4f8;
+  color: #202124;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#ai-copilot-toggle-button:hover {
+  background-color: #aecbfa;
+  transform: scale(1.05);
+}
+
+#ai-copilot-toggle-button span {
+  font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
 }
