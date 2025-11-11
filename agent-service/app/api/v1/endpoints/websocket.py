@@ -1,51 +1,76 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import List
+import json
+import uuid
 
-# Create a new router for this endpoint
 router = APIRouter()
+
+class ConnectionManager:
+    def __init__(self, websocket: WebSocket):
+        self.websocket = websocket
+        self.connection_id: str = f"ws_{uuid.uuid4()}"
+
+    async def connect(self):
+        await self.websocket.accept()
+        print(f"WebSocket connection {self.connection_id} established.")
+
+    def disconnect(self):
+        print(f"WebSocket {self.connection_id} disconnected.")
+
+    async def receive_text(self) -> str:
+        return await self.websocket.receive_text()
+
+    async def send_text(self, message: str):
+        await self.websocket.send_text(message)
+
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """
-    This is the main WebSocket endpoint for the Chrome Extension (Mode 1).
-    It will handle real-time audio and chat.
+    This endpoint is for the Chrome Extension.
+    It now *only* handles text-based JSON messages.
     """
-    await websocket.accept()
-    print("WebSocket connection established (Mode 1 Co-Pilot connected).")
+    manager = ConnectionManager(websocket)
+    await manager.connect()
+    
     try:
         while True:
-            # Wait for a message from the extension
-            # This can be either bytes (audio) or text (JSON)
-            data = await websocket.receive()
+            # Wait for a text message from the extension
+            message_data = await manager.receive_text()
+            print(f"Received data: {message_data}")
 
-            if "bytes" in data:
-                # This is an audio chunk
-                audio_chunk = data["bytes"]
-                print(f"Received {len(audio_chunk)} bytes of audio data.")
-                
-                # TODO: 1. Add audio_chunk to a Queue
-                # TODO: 2. A background worker pulls from queue
-                # TODO: 3. Worker sends chunk to Whisper
-                # TODO: 4. Get transcript back from Whisper
-                
-                # For now, just send a simple text pong
-                await websocket.send_text("Audio chunk received")
+            try:
+                # Parse the JSON message
+                message_json = json.loads(message_data)
+                msg_type = message_json.get("type")
 
-            elif "text" in data:
-                # This is a text message (e.g., from the chat box)
-                message_data = data["text"]
-                print(f"Received text message: {message_data}")
+                if msg_type == "USER_CHAT_TEXT":
+                    user_message = message_json.get("payload", "")
+                    print(f"Received chat message: {user_message}")
+                    
+                    # --- AI LOGIC WILL GO HERE ---
+                    # For now, just send an echo back
+                    
+                    reply = f"You said: {user_message}"
+                    await manager.send_text(json.dumps({
+                        "type": "AGENT_REPLY",
+                        "payload": reply
+                    }))
                 
-                # In the future, we'll parse this JSON
-                # e.g., msg = json.loads(message_data)
-                # if msg['type'] == 'USER_CHAT_TEXT':
-                #    send_to_gemini(msg['payload'])
+                else:
+                    print(f"Received unknown message type: {msg_type}")
 
-                # For now, just echo it back
-                await websocket.send_text(f"You said: {message_data}")
+
+            except json.JSONDecodeError:
+                print(f"Received non-JSON text message: {message_data}")
+                await manager.send_text(json.dumps({
+                    "type": "ERROR",
+                    "message": "Invalid JSON"
+                }))
 
     except WebSocketDisconnect:
-        print("WebSocket connection closed.")
+        print("WebSocket connection closed by client.")
     except Exception as e:
         print(f"An error occurred in the WebSocket: {e}")
     finally:
-        print("Client disconnected.")
+        manager.disconnect()

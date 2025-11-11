@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Meet AI Co-Pilot (v2.0)",
+  "version": "2.0.0",
+  "description": "A simple, auto-injecting side panel for Google Meet.",
+
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabCapture"
+  ],
+
+  "host_permissions": [
+    "*://meet.google.com/*"
+  ],
+
+  "action": {
+    "default_title": "Co-Pilot Settings (Not used for toggle)",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["*://meet.google.com/*"],
+      "css": ["content-script.css"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

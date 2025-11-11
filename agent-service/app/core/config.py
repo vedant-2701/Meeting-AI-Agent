@@ -4,6 +4,19 @@ import os
 Global configuration settings for the application.
 """
 
+# *** --- START OF FFMPEG FIX --- ***
+#
+# 1. EDIT THIS LINE:
+# Paste the FULL path to your 'ffmpeg.exe' file.
+# Use double backslashes (\\) for Windows paths.
+#
+# EXAMPLE: FFMPEG_PATH = "D:\\ffmpeg-n8.0\\bin\\ffmpeg.exe"
+#
+FFMPEG_PATH = r"D:\ffmpeg-n8.0-latest-win64-gpl-8.0\bin\ffmpeg.exe"
+#
+# *** --- END OF FFMPEG FIX --- ***
+
+
 # Base directory for our "database" and file storage
 DATA_DIR = "agent_data"
 

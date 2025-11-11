@@ -8,7 +8,6 @@ db.json
 __pycache__/
 *.pyc
 todo.txt
-extension-service/
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
