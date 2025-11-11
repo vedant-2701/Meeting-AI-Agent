@@ -37,7 +37,6 @@ async function runBot() {
                 const rawParticipants: RawParticipant[] =
                     await meetService.scrapeParticipants();
                 lastKnownParticipants = mergeDuplicates(rawParticipants);
-                console.log(lastKnownParticipants);
 
                 // Find the host on the first loop
                 if (!hostName) {

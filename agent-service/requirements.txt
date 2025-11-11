@@ -2,3 +2,7 @@ fastapi
 uvicorn[standard]
 pydantic
 fastapi-cors
+python-multipart
+ffmpeg-python
+requests
+websocket-client

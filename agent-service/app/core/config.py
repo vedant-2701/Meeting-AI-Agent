@@ -1,0 +1,21 @@
+import os
+
+"""
+Global configuration settings for the application.
+"""
+
+# Base directory for our "database" and file storage
+DATA_DIR = "agent_data"
+
+# JSON file for storing report metadata
+DB_FILE = os.path.join(DATA_DIR, "db.json")
+
+# Directory for storing final .wav audio files
+AUDIO_DIR = os.path.join(DATA_DIR, "saved_audio")
+
+# Directory for storing temporary video files during processing
+TEMP_DIR = os.path.join(DATA_DIR, "temp_video")
+
+# Create directories if they don't exist
+os.makedirs(AUDIO_DIR, exist_ok=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
