@@ -45,6 +45,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'getStatus') {
     handleGetStatus(sendResponse);
     return true; // Will respond asynchronously
+  } else if (message.action === 'textMessage') {
+    handleTextMessage(message, sendResponse);
+    return true; // Will respond asynchronously
   }
   
   return false;
@@ -117,6 +120,33 @@ async function handleGetStatus(sendResponse) {
   } catch (error) {
     console.error('Error in getStatus:', error);
     sendResponse({ isRecording: false, isConnected: false });
+  }
+}
+
+// Separate async function for sending text messages
+async function handleTextMessage(message, sendResponse) {
+  try {
+    console.log('Forwarding text message to offscreen:', message.payload);
+    
+    // Ensure offscreen document exists (it will auto-connect WebSocket)
+    await setupOffscreenDocument();
+    
+    // Send the message
+    chrome.runtime.sendMessage({ 
+      target: 'offscreen',
+      action: 'sendTextMessage',
+      payload: message.payload
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error sending text message to offscreen:', chrome.runtime.lastError);
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ success: true });
+      }
+    });
+  } catch (error) {
+    console.error('Error in handleTextMessage:', error);
+    sendResponse({ success: false, error: error.message });
   }
 }
 

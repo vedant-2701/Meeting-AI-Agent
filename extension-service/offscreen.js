@@ -37,6 +37,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       isConnected: websocket && websocket.readyState === WebSocket.OPEN
     });
     return false; // Synchronous response
+  } else if (message.action === 'sendTextMessage') {
+    // Send text message to backend
+    sendTextMessage(message.payload)
+      .then(() => {
+        sendResponse({ success: true });
+      })
+      .catch((error) => {
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Will respond asynchronously
   }
   
   return false;
@@ -328,8 +338,24 @@ function connectWebSocket() {
     
     websocket.onmessage = (event) => {
       console.log('WebSocket message received:', event.data);
-      // Forward transcript to background (which will forward to content script)
-      notifyBackground('transcript', { text: event.data });
+      
+      // Try to parse as JSON first
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'AGENT_REPLY') {
+          // Agent reply - forward to content script
+          console.log('📨 Agent reply:', data.payload);
+          notifyBackground('AGENT_REPLY', { message: data.payload });
+        } else {
+          // Other JSON messages
+          notifyBackground('message', data);
+        }
+      } catch (e) {
+        // Not JSON, treat as plain text (transcript, status messages, etc.)
+        console.log('📝 Plain text message:', event.data);
+        notifyBackground('transcript', { text: event.data });
+      }
     };
     
     websocket.onerror = (error) => {
@@ -348,6 +374,39 @@ function connectWebSocket() {
         reject(new Error('WebSocket connection timeout'));
       }
     }, 5000);
+  });
+}
+
+function sendTextMessage(payload) {
+  return new Promise(async (resolve, reject) => {
+    console.log('Sending text message to WebSocket:', payload);
+    
+    // If WebSocket is not connected, establish connection first
+    if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+      console.log('📡 WebSocket not connected. Establishing connection...');
+      try {
+        await connectWebSocket();
+        console.log('✅ WebSocket connected. Ready to send message.');
+      } catch (error) {
+        console.error('❌ Failed to connect WebSocket:', error);
+        notifyBackground('error', { 
+          message: 'Cannot connect to backend. Please make sure the backend server is running.' 
+        });
+        reject(new Error('Failed to connect to backend'));
+        return;
+      }
+    }
+    
+    try {
+      // Send as JSON string
+      const message = JSON.stringify(payload);
+      websocket.send(message);
+      console.log('✅ Text message sent to backend');
+      resolve();
+    } catch (error) {
+      console.error('❌ Error sending text message:', error);
+      reject(error);
+    }
   });
 }
 

@@ -180,15 +180,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     addMessageToLog("Agent", `Transcript: ${request.text}`);
   } else if (request.type === "AGENT_REPLY") {
     // Handle agent replies from backend
-    try {
-      const data = typeof request.message === 'string' ? JSON.parse(request.message) : request.message;
-      if (data.type === "AGENT_REPLY") {
-        addMessageToLog("Agent", data.payload);
-      }
-    } catch (e) {
-      console.error("Could not parse agent reply:", e);
-      addMessageToLog("Agent", request.message);
-    }
+    const message = request.message || request.payload || "";
+    console.log("Agent reply received:", message);
+    addMessageToLog("Agent", message);
   } else if (request.type === "audioChunkSent") {
     // Optional: Update status with data transfer info
     console.log(`Audio chunk sent: ${request.size} bytes`);
