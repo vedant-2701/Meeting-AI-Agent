@@ -29,6 +29,10 @@ AUDIO_DIR = os.path.join(DATA_DIR, "saved_audio")
 # Directory for storing temporary video files during processing
 TEMP_DIR = os.path.join(DATA_DIR, "temp_video")
 
+# Directory for storing transcripts
+TRANSCRIPTS_DIR = os.path.join(DATA_DIR, "transcripts")
+
 # Create directories if they don't exist
 os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(TEMP_DIR, exist_ok=True)
+os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)

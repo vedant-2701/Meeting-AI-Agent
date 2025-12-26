@@ -6,3 +6,4 @@ python-multipart
 ffmpeg-python
 requests
 websocket-client
+faster-whisper

@@ -1,93 +1,49 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from typing import List
-import uuid
-import os
-from datetime import datetime
-from app.services.audio import process_audio_stream
 import json
+from app.services.websocket_manager import WebSocketManager, AudioStreamManager, connection_pool
+from app.services.message_handlers import (
+    handle_audio_data,
+    handle_audio_complete,
+    handle_user_message,
+    handle_end_stream,
+    MESSAGE_HANDLERS
+)
 
 router = APIRouter()
-
-class AudioStreamManager:
-    def __init__(self, websocket: WebSocket):
-        self.websocket = websocket
-        self.audio_chunks: List[bytes] = []
-        self.connection_id: str = f"meeting_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
-        self.chunk_count = 0
-
-    async def connect(self):
-        await self.websocket.accept()
-        print(f"✅ WebSocket connection {self.connection_id} established.")
-
-    def add_audio_chunk(self, chunk: bytes):
-        """Store audio chunk in memory"""
-        self.audio_chunks.append(chunk)
-        self.chunk_count += 1
-        print(f"📦 Chunk #{self.chunk_count}: Received {len(chunk)} bytes (Total: {len(self.audio_chunks)} chunks)")
-
-    def save_audio(self):
-        """Save accumulated audio chunks to file"""
-        if not self.audio_chunks:
-            print("⚠️  No audio chunks to save.")
-            return None
-        
-        print(f"💾 Saving {len(self.audio_chunks)} audio chunks to file...")
-        try:
-            audio_path = process_audio_stream(self.audio_chunks, self.connection_id)
-            print(f"✅ Audio saved successfully: {audio_path}")
-            return audio_path
-        except Exception as e:
-            print(f"❌ Error saving audio: {e}")
-            return None
-
-    def disconnect(self):
-        """Clean up and save audio on disconnect"""
-        print(f"🔌 WebSocket {self.connection_id} disconnected.")
-        print(f"📊 Total chunks received: {len(self.audio_chunks)}")
-        
-        # Save audio on disconnect
-        self.save_audio()
 
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-        
-    manager = AudioStreamManager(websocket)
-    await manager.connect()
+    """
+    WebSocket endpoint for real-time communication.
+    Handles audio streaming, text messages, and transcription.
+    """
+    # Initialize managers
+    ws_manager = WebSocketManager(websocket)
+    audio_manager = AudioStreamManager(ws_manager.connection_id)
+    
+    # Connect WebSocket
+    await ws_manager.connect()
+    
+    # Add to connection pool
+    connection_pool.add(ws_manager)
     
     try:
-        while True:
-            # Receive data (binary or text)
-            try:
-                data = await websocket.receive()
-            except RuntimeError as e:
-                # Client closed connection
-                print(f"Client disconnected: {e}")
+        while ws_manager.is_connected:
+            # Receive message
+            data = await ws_manager.receive()
+            
+            if data is None:
+                # Connection closed
                 break
-
+            
+            # Handle binary audio data
             if "bytes" in data:
-                # Binary audio data received
                 audio_chunk = data["bytes"]
-                manager.add_audio_chunk(audio_chunk)
-                
-                # Acknowledge receipt
-                try:
-                    await websocket.send_text(f"✓ Received audio data: {len(audio_chunk):,} bytes")
-                except:
-                    # Client may have already disconnected
-                    print("Could not send acknowledgment (client may have disconnected)")
-                
-                # Process audio after receiving
-                print(f"🎵 Processing audio file ({len(audio_chunk):,} bytes)...")
-                audio_path = manager.save_audio()
-                if audio_path:
-                    try:
-                        await websocket.send_text(f"✓ Audio saved: {os.path.basename(audio_path)}")
-                    except:
-                        print("Could not send save confirmation (client disconnected)")
-
+                await handle_audio_data(ws_manager, audio_manager, audio_chunk)
+            
+            # Handle text messages
             elif "text" in data:
-                # Text message received
                 message = data["text"]
                 print(f"📝 Received text message: {message}")
                 
@@ -95,47 +51,57 @@ async def websocket_endpoint(websocket: WebSocket):
                 try:
                     message_json = json.loads(message)
                     msg_type = message_json.get("type")
+                    payload = message_json.get("payload")
                     
-                    if msg_type == "USER_CHAT_TEXT":
-                        # User sent a chat message
-                        user_message = message_json.get("payload", "")
-                        print(f"💬 User chat: {user_message}")
+                    # Route to appropriate handler
+                    handler = MESSAGE_HANDLERS.get(msg_type)
+                    if handler:
+                        await handler(ws_manager, payload)
                         
-                        # Process the message and send reply
-                        # TODO: Integrate with AI agent here
-                        reply = f"Agent received: {user_message}"
-                        
-                        response = json.dumps({
-                            "type": "AGENT_REPLY",
-                            "payload": reply
-                        })
-                        await websocket.send_text(response)
-                        print(f"📤 Sent reply: {reply}")
-                    
-                    elif msg_type == "END_STREAM":
-                        print("🛑 END_STREAM command received. Closing connection...")
-                        break
-                    
+                        # If END_STREAM, break the loop
+                        if msg_type == "END_STREAM":
+                            break
                     else:
                         print(f"⚠️  Unknown message type: {msg_type}")
-                        
+                        await ws_manager.send_json({
+                            "type": "ERROR",
+                            "message": f"Unknown message type: {msg_type}"
+                        })
+                
                 except json.JSONDecodeError:
-                    # Not JSON, treat as plain text
+                    # Not JSON, treat as plain text command
                     print(f"📝 Plain text: {message}")
                     
-                    # Handle special commands
-                    if message.lower() == "stop" or message.lower() == "end":
-                        print("🛑 Stop command received. Closing connection...")
+                    if message.lower() in ["stop", "end"]:
+                        print("🛑 Stop command received")
                         break
-                    
-                    # Echo back
-                    await websocket.send_text(f"Echo: {message}")
-
+                    else:
+                        # Echo back
+                        await ws_manager.send_text(f"Echo: {message}")
+    
     except WebSocketDisconnect:
-        print("🔌 WebSocket connection closed by client.")
+        print(f"🔌 Client disconnected: {ws_manager.connection_id}")
+    
     except Exception as e:
-        print(f"❌ An error occurred: {e}")
+        print(f"❌ Error in WebSocket connection: {e}")
         import traceback
         traceback.print_exc()
+        
+        # Send error to client if still connected
+        if ws_manager.is_connected:
+            await ws_manager.send_json({
+                "type": "ERROR",
+                "message": f"Server error: {str(e)}"
+            })
+    
     finally:
-        manager.disconnect()
+        # Process any remaining audio before disconnecting
+        if audio_manager.has_audio():
+            print(f"📦 Processing remaining audio before disconnect...")
+            await handle_audio_complete(ws_manager, audio_manager)
+        
+        # Remove from connection pool
+        connection_pool.remove(ws_manager.connection_id)
+        
+        # Disconnect
+        await ws_manager.disconnect()
