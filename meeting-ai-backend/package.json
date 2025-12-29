@@ -1,0 +1,22 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/gateway",
+    "apps/orchestrator"
+  ],
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:gateway": "npm run dev -w apps/gateway",
+    "dev:orchestrator": "npm run dev -w apps/orchestrator",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
