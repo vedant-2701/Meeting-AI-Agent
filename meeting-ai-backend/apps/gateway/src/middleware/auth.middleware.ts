@@ -21,6 +21,7 @@ export async function authMiddleware(
     reply: FastifyReply
 ): Promise<void> {
     const authHeader = request.headers.authorization;
+    const userId = request.headers["x-user-id"] as string | undefined;
 
     if (!authHeader) {
         return sendAuthError(reply, "Missing authorization header");
@@ -37,12 +38,18 @@ export async function authMiddleware(
 
     // TODO: Verify JWT token properly
     // For now, just check if token exists
-    (request as any).user = {
-        id: "user-123",
-        email: "user@example.com",
+    // 1. Verify Token (Mock logic for now)
+    // In production: const decoded = jwt.verify(token, secret);
+    const decodedUser = {
+        id: userId || "user-123", // ⚠️ EXTRACT THIS FROM TOKEN, DO NOT READ request.headers["x-user-id"]
+        email: "user@example.com"
     };
 
-    logger.debug({ userId: "user-123" }, "User authenticated");
+    // 2. Attach User to Request Object
+    // This makes 'request.user' available to your Gateway Controllers
+    (request as any).user = decodedUser;
+
+    logger.debug({ userId: userId || "user-123" }, "User authenticated");
 }
 
 /**
@@ -56,11 +63,11 @@ export async function optionalAuthMiddleware(
 
     if (authHeader) {
         const [scheme, token] = authHeader.split(" ");
-        if (scheme === "Bearer" && token) {
-            (request as any).user = {
-                id: "user-123",
-                email: "user@example.com",
-            };
-        }
+        // if (scheme === "Bearer" && token) {
+        //     (request as any).user = {
+        //         id: "user-123",
+        //         email: "user@example.com",
+        //     };
+        // }
     }
 }

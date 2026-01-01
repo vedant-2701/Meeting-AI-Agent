@@ -74,6 +74,8 @@ async function proxyToOrchestrator(
     const user = (request as any).user;
     const headers: Record<string, string> = {};
 
+    console.log(user);
+
     if (user) {
         headers["X-User-Id"] = user.id;
         headers["X-User-Email"] = user.email;
@@ -119,7 +121,6 @@ export async function apiRoutes(fastify: FastifyInstance): Promise<void> {
         return proxyToOrchestrator(req, reply, `/meetings/${meetingId}`, "PUT");
     });
 
-
     /* Transcript Routes */
     fastify.get("/api/meetings/:meetingId/transcripts", (req, reply) => {
         const { meetingId } = req.params as { meetingId: string };
@@ -130,7 +131,6 @@ export async function apiRoutes(fastify: FastifyInstance): Promise<void> {
             "GET"
         );
     });
-
 
     /* Question Routes */
     fastify.post("/api/meetings/:meetingId/ask", (req, reply) => {
@@ -143,7 +143,6 @@ export async function apiRoutes(fastify: FastifyInstance): Promise<void> {
         );
     });
 
-    
     /* Report Routes */
     fastify.get("/api/meetings/:meetingId/report", (req, reply) => {
         const { meetingId } = req.params as { meetingId: string };
@@ -164,4 +163,9 @@ export async function apiRoutes(fastify: FastifyInstance): Promise<void> {
             "POST"
         );
     });
+
+    /* Chat Route (Semantic Router) */
+    fastify.post("/api/chat", (req, reply) =>
+        proxyToOrchestrator(req, reply, "/chat", "POST")
+    );
 }
